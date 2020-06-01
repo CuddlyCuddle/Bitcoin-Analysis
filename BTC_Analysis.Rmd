@@ -1,0 +1,280 @@
+---
+title: "Bitcoin Analysis"
+output:
+  html_document: 
+    toc: TRUE
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(plotly)
+library(quantmod)
+library(qwraps2)
+library(knitr)
+library(dplyr)
+
+
+# Preliminary Functions
+# 
+# Function for Determining Capital Growth over time
+KapitalGrowth <- function(x, y){
+  m <- length(y)
+  y <- y/100
+  k <- vector()
+  g <- vector()
+  k[1] <- x
+  for(i in 2:m){
+    g[i]<- k[i-1]*y[i]
+    k[i]<- k[i-1] + g[i]
+  }
+  return(k)
+}
+
+# Function for Determining Returns of a Given Stock or Index
+Returns_p <- function(x) {
+  Returns <- vector()
+  for(i in 2:length(x)){
+    Returns[i]  <- ((x[i] - x[i-1])/x[i-1])*100
+  }
+  return(Returns)
+}
+
+LagReturns1 <- function(x) {
+  LagReturns1 <- vector()
+  for(i in 2:length(x)){
+    LagReturns1[i] <- (x[i-1])
+  }
+  return(LagReturns1)
+}
+
+# Function for Determing the Value at Risk Assuming Normal Distribution
+NDVaR <- function(x){
+  MU <- mean(x, na.rm = T)
+  SD <- sd(x, na.rm = T)
+  NDV <- MU + qnorm(.05)*SD
+  return(NDV)
+}
+
+# Function for Determing the Value at Risk Assuming Non-Normal Distribution
+NON_NDVaR <- function(x){
+  temp0 <- na.omit(x)
+  o.x <- sort(temp0,decreasing = F)
+  i <- .05*length(o.x)
+  i.r <- round(i)
+  d <- abs(i.r-1- i)
+  NNVaR <- o.x[i.r-1] + d*(abs(o.x[i.r-1]-o.x[i.r]))
+  return(NNVaR)
+}
+
+LagReturns1 <- function(x) {
+  LagReturns1 <- vector()
+  for(i in 2:length(x)){
+    LagReturns1[i] <- (x[i-1])
+  }
+  return(LagReturns1)
+}
+
+tex2markdown <- function(texstring) {
+  writeLines(text = texstring,
+             con = myfile <- tempfile(fileext = ".tex"))
+  texfile <- pandoc(input = myfile, format = "html")
+  cat(readLines(texfile), sep = "\n")
+  unlink(c(myfile, texfile))
+}
+
+BTC <- read.csv("C:/Users/jeanp/OneDrive/Documents/GitHub/BTC.csv")
+
+
+BTC$Returns <- Returns_p(BTC$Adj.Close)
+BTC$lReturns <- Returns_p(log(BTC$Adj.Close))
+DeterministicPrice <- function(x, y, w){
+  LinearDeterministic <- rep(NA, w)
+  LinearDeterministic[1] <- y
+    for(i in 2:w) {
+    LinearDeterministic[i] <- LinearDeterministic[i-1]*x + LinearDeterministic[i-1]
+    }
+  return(LinearDeterministic)
+}
+
+BTC$LinearDeterministic <- DeterministicPrice(mean(BTC$Returns/100, na.rm = TRUE), 457.334, nrow(BTC))
+LinearDeterministic <- DeterministicPrice(mean(BTC$Returns/100, na.rm = TRUE), 457.334, nrow(BTC))
+
+y <- BTC$Returns
+x <- 5000
+mean(BTC$Returns, na.rm = TRUE)
+sum(BTC$Returns, na.rm = TRUE)
+min(BTC$Returns, na.rm = TRUE)
+max(BTC$Returns, na.rm = TRUE)
+median(BTC$Returns, na.rm = TRUE)
+sd(BTC$Returns, na.rm = TRUE)
+var(BTC$Returns, na.rm = TRUE)
+NDVaR(BTC$Returns)
+NON_NDVaR(BTC$Returns)
+
+options(qwraps2_markup = "markdown")
+summary_statistics <-
+  list(
+    "Statistics" =
+      list(
+        "Mean (sd)" = ~qwraps2::mean_sd(Returns, na_rm = TRUE),
+        "median (Q1, Q3)" = ~qwraps2::median_iqr(Returns, na_rm = TRUE),
+        "min" = ~min(Returns, na.rm = TRUE),
+        "max" = ~max(Returns, na.rm = TRUE),
+        "Cumulative Return"= ~sum(Returns, na.rm = TRUE)
+      ),
+    "Value At Risk" =
+      list(
+        "Normally Distributed VaR" = ~NDVaR(Returns),
+        "Non-Normally Distributed VaR" = ~NON_NDVaR(Returns)
+      )
+  )
+
+```
+
+
+
+
+# BTC
+```{r, echo = FALSE}
+fig <- BTC %>% plot_ly(x = ~Date, type = "candlestick",
+                      open = ~Open, close = ~Close,
+                      high = ~High, low = ~Low) 
+fig <- fig %>% layout(title = "BTC Chart", xaxis = list(rangeslider = list(visible = F)))
+fig
+```
+
+
+
+## Table Of Statistics (Daily, Returns)
+
+```{r, echo=FALSE}
+kable(summary_table(BTC, summary_statistics))
+```
+
+
+## Plotting Returns (Daily, Returns)
+```{r, echo=FALSE}
+fig <- plot_ly(BTC, x = ~Date, y = ~Returns, type = 'scatter', mode = 'lines')
+fig <- fig %>% layout(title = "BTC Chart")
+fig
+fig <- plot_ly(BTC, x = ~Returns, type = 'histogram')
+fig
+```
+
+
+
+
+## Table Of Statistics (Daily, Log-Adjusted Returns)
+
+```{r, echo = FALSE}
+
+options(qwraps2_markup = "markdown")
+LogSummary_Statistics <-
+  list(
+    "Statistics" =
+      list(
+        "Mean (sd)" = ~qwraps2::mean_sd(lReturns, na_rm = TRUE),
+        "median (Q1, Q3)" = ~qwraps2::median_iqr(lReturns, na_rm = TRUE),
+        "min" = ~min(lReturns, na.rm = TRUE),
+        "max" = ~max(lReturns, na.rm = TRUE),
+        "Cumulative Return"= ~sum(lReturns, na.rm = TRUE)
+      ),
+    "Value At Risk" =
+      list(
+        "Normally Distributed VaR" = ~NDVaR(lReturns),
+        "Non-Normally Distributed VaR" = ~NON_NDVaR(lReturns)
+      )
+  )
+kable(summary_table(BTC, LogSummary_Statistics))
+```
+
+
+## BTC With Historical Statistics Used to Deterministic Projection of Logarithmic Growth
+```{r, echo = FALSE}
+fig <- BTC %>% plot_ly(x = ~Date, type = "candlestick",
+                      open = ~Open, close = ~Close,
+                      high = ~High, low = ~Low) 
+fig <- fig %>% add_lines(x = ~Date, y = LinearDeterministic, line = list(color = 'black', width = 0.75), inherit = T)
+fig <- fig %>% layout(title = "BTC Chart", xaxis = list(rangeslider = list(visible = F)))
+fig
+```
+
+
+## Simple Price Projection with Geometric Brownian Motion
+```{r, echo = FALSE}
+# Simulating Tesla Price Action Using Random Walk Theory
+# Mu and sigma of the Stock or Asset
+mu <- mean(BTC$Returns, na.rm = TRUE)
+sig <- sd(BTC$Returns, na.rm = TRUE)
+t <- nrow(BTC)
+Starting_price <- BTC$Adj.Close[1]
+
+# Start simulating prices
+price <- rep(NA,t)
+price[1] <- Starting_price
+for(i in 2:t){
+  price[i] <- price[i-1] + price[i-1]*(rnorm(1,mu,sig)/100)
+}
+Exp_Growth <- rep(NA, t)
+Exp_Growth <- Starting_price
+for(i in 2:t){
+  Exp_Growth[i] <- Exp_Growth[i-1]*(mu/100)+Exp_Growth[i-1]
+}
+
+fig <- BTC %>% plot_ly(x = ~Date, type = "candlestick",
+                      open = ~Open, close = ~Close,
+                      high = ~High, low = ~Low) 
+fig <- fig %>% add_lines(x = ~Date, y = LinearDeterministic, line = list(color = 'black', width = 0.75), inherit = T)
+fig <- fig %>% add_lines(x = ~Date, y = price, line = list(color = 'purple', width = 0.75), inherit = T)
+fig <- fig %>% layout(title = "BTC Chart", xaxis = list(rangeslider = list(visible = F)))
+fig
+```
+
+
+## Multiple Price Projections with Geometric Brownian Motion
+```{r, echo = FALSE}
+# Simulating Tesla Price Action Using Random Walk Theory
+# Mu and sigma of the Stock or Asset
+mu <- mean(BTC$Returns, na.rm = TRUE)
+sig <- sd(BTC$Returns, na.rm = TRUE)
+t <- nrow(BTC)
+Starting_price <- BTC$Adj.Close[1]
+
+# Start simulating prices
+price <- rep(NA,t)
+price[1] <- Starting_price
+for(i in 2:t){
+  price[i] <- price[i-1] + price[i-1]*(rnorm(1,mu,sig)/100)
+}
+
+
+price1 <- rep(NA,t)
+price1[1] <- Starting_price
+for(i in 2:t){
+  price1[i] <- price1[i-1] + price1[i-1]*(rnorm(1,mu,sig)/100)
+}
+
+price2 <- rep(NA,t)
+price2[1] <- Starting_price
+for(i in 2:t){
+  price2[i] <- price2[i-1] + price2[i-1]*(rnorm(1,mu,sig)/100)
+}
+
+
+fig <- BTC %>% plot_ly(x = ~Date, type = "candlestick",
+                      open = ~Open, close = ~Close,
+                      high = ~High, low = ~Low) 
+fig <- fig %>% add_lines(x = ~Date, y = LinearDeterministic, line = list(color = 'black', width = 0.75), inherit = T)
+fig <- fig %>% add_lines(x = ~Date, y = price, line = list(color = 'purple', width = 0.75), inherit = T)
+fig <- fig %>% add_lines(x = ~Date, y = price1, line = list(color = 'teal', width = 0.75), inherit = T)
+fig <- fig %>% add_lines(x = ~Date, y = price2, line = list(color = 'blue', width = 0.75), inherit = T)
+fig <- fig %>% layout(title = "BTC Chart", xaxis = list(rangeslider = list(visible = F)))
+fig
+```
+
+## Subsetting the data Into 4 groups:
+```{r}
+
+
+```
