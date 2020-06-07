@@ -100,18 +100,6 @@ DeterministicPrice <- function(x, y, w){
 BTC$LinearDeterministic <- DeterministicPrice(mean(BTC$Returns/100, na.rm = TRUE), 457.334, nrow(BTC))
 LinearDeterministic <- DeterministicPrice(mean(BTC$Returns/100, na.rm = TRUE), 457.334, nrow(BTC))
 
-y <- BTC$Returns
-x <- 5000
-mean(BTC$Returns, na.rm = TRUE)
-sum(BTC$Returns, na.rm = TRUE)
-min(BTC$Returns, na.rm = TRUE)
-max(BTC$Returns, na.rm = TRUE)
-median(BTC$Returns, na.rm = TRUE)
-sd(BTC$Returns, na.rm = TRUE)
-var(BTC$Returns, na.rm = TRUE)
-NDVaR(BTC$Returns)
-NON_NDVaR(BTC$Returns)
-
 options(qwraps2_markup = "markdown")
 summary_statistics <-
   list(
@@ -133,8 +121,6 @@ summary_statistics <-
 ```
 
 
-
-
 # BTC
 ```{r, echo = FALSE}
 fig <- BTC %>% plot_ly(x = ~Date, type = "candlestick",
@@ -146,51 +132,41 @@ fig
 
 
 
-## Table Of Statistics (Daily, Returns)
+# Table Of Statistics (Daily, Returns (%))
 
 ```{r, echo=FALSE}
 kable(summary_table(BTC, summary_statistics))
 ```
 
 
+  The above statistics table is based on the percentage returns for the daily price valuation of bitcoin; it presents the mean, median, min, and max returns to demonstrate the range as well as the average return over the six year period from 2014 to 2020.  
+  
+In regards to the *mean return (%)* of bitcoin, it can be noted that it is positive and relatively close in value to the median price meaning that over a daily basis, bitcoin is expected to provide approximately .22% return of an investment  per day during a 6 year period. This can fluctuate depending on the valuation trend as the price of bitcoin can over a larger period be trending downwards, upwards or sideways. Given that the mean and the median are relatively close in value, there is limited skewness in the data, and the skewness is favoring higher returns since the mean is to the right of the median.  
+
+Colloquially, a _bull market_ is defined as a financial securitity with a sustained increase in valuation; thus, a _bear market_ is defined as a financial securitity with a sustained decrease in valuation; and a _trendless_ market does not have either a sustained increase or a sustained decrease in valuation.  
+
+The standard deviation is approximately 3.94% which means that 95% of the daily returns will most likely fluctuate between [-7.66%, 8.01%]. Anything that occurs outside of this interval would be a rare event with a probability $\le 5%$, which means that most of the returns would occur be centered around the mean, and 5% of the returns would be $[-\infty,-7.66\%]\cup[8.01\%,\infty]$ (outside of the interval [-7.66%, 8.01%]).  
+
+In addition, the minimum provided in this table is the greatest percent decrease in the valuation of bitcoin for a single day, and respectively, the maximum is the greatest percent increase in the valuation of bitcoin for a single day. While the cummulative return is the total percentage return over the full period of the investment.  
+
+Finally, the value at risk is approximately 6.25% which means that on a daily time frame, there is a probability of $5\%$ that one could lose 6.25% on the daily, this is important information for trading and risks could be taken to mitigate the risks of a 6.25% drawback in one's portfolio through hedging or other means. 
+
+
 ## Plotting Returns (Daily, Returns)
 ```{r, echo=FALSE}
 fig <- plot_ly(BTC, x = ~Date, y = ~Returns, type = 'scatter', mode = 'lines')
-fig <- fig %>% layout(title = "BTC Chart")
+fig <- fig %>% layout(title = "Returns (%)")
 fig
 fig <- plot_ly(BTC, x = ~Returns, type = 'histogram')
 fig
 ```
 
+  
+  There two figure presented above is a representation of the returns plotted against time which denotes the returns for each of the change in price valuation on the daily basis. In addition, the histogram represents the frequency for the returns within a .5% interval, and based on the graph there are some outlier in the distribution but it is mostly centered around the mean and it has a gaussian shape meaning that the returns are normally distributed. This can be tested using a form of normality test but will not given the visual shape of the data.
+  
+# Financial projections of Bitcoin: {.tabset}
 
-
-
-## Table Of Statistics (Daily, Log-Adjusted Returns)
-
-```{r, echo = FALSE}
-
-options(qwraps2_markup = "markdown")
-LogSummary_Statistics <-
-  list(
-    "Statistics" =
-      list(
-        "Mean (sd)" = ~qwraps2::mean_sd(lReturns, na_rm = TRUE),
-        "median (Q1, Q3)" = ~qwraps2::median_iqr(lReturns, na_rm = TRUE),
-        "min" = ~min(lReturns, na.rm = TRUE),
-        "max" = ~max(lReturns, na.rm = TRUE),
-        "Cumulative Return"= ~sum(lReturns, na.rm = TRUE)
-      ),
-    "Value At Risk" =
-      list(
-        "Normally Distributed VaR" = ~NDVaR(lReturns),
-        "Non-Normally Distributed VaR" = ~NON_NDVaR(lReturns)
-      )
-  )
-kable(summary_table(BTC, LogSummary_Statistics))
-```
-
-
-## BTC With Historical Statistics Used to Deterministic Projection of Logarithmic Growth
+## BTC With Historical Statistics Used for the Deterministic Projection of Logarithmic Growth
 ```{r, echo = FALSE}
 fig <- BTC %>% plot_ly(x = ~Date, type = "candlestick",
                       open = ~Open, close = ~Close,
@@ -199,7 +175,6 @@ fig <- fig %>% add_lines(x = ~Date, y = LinearDeterministic, line = list(color =
 fig <- fig %>% layout(title = "BTC Chart", xaxis = list(rangeslider = list(visible = F)))
 fig
 ```
-
 
 ## Simple Price Projection with Geometric Brownian Motion
 ```{r, echo = FALSE}
@@ -273,8 +248,78 @@ fig <- fig %>% layout(title = "BTC Chart", xaxis = list(rangeslider = list(visib
 fig
 ```
 
-## Subsetting the data Into 4 groups:
-```{r}
 
+  This data was simulated using the mathematical equation: 
+  $$\delta S_t=S_{(t-1)}\cdot(\mu\delta t + \sigma \delta W_t)$$
+  Where in this case $\delta t = 1$ because the daily variance and the daily mean are being used rather than their annualized counter-parts. 
+
+## Subsetting the data Into 6 groups: {.tabset}
+### Major Bull Market
+```{r, echo = FALSE}
+BullMarket <- BTC[120:1187,]
+kable(summary_table(BullMarket, summary_statistics))
+```
+
+### Major Bear Market
+```{r, echo = FALSE}
+BearMarket <- BTC[-c(1:1187),]
+kable(summary_table(BearMarket, summary_statistics))
+```
+
+### Minor Bear Market 1
+```{r, echo = FALSE}
+FirstMinorBearMarket <- BTC[-c(1:1187,1551:nrow(BTC)),]
+kable(summary_table(FirstMinorBearMarket, summary_statistics))
+```
+
+### Minor Bull Market 1
+```{r, echo = FALSE}
+FirstMinorBullMarket <- BTC[c(1551:1744),]
+kable(summary_table(FirstMinorBullMarket, summary_statistics))
+
+```
+
+
+
+
+### Minor Bear Market 2
+```{r, echo = FALSE}
+SecondMinorBearMarket <- BTC[c(1744:2004),]
+kable(summary_table(SecondMinorBearMarket, summary_statistics))
+```
+
+### Minor Bull Market 2
+```{r, echo = FALSE}
+SeconMinorBullMarket <- BTC[-c(2004:nrow(BTC)),]
+kable(summary_table(SeconMinorBullMarket, summary_statistics))
+```
+
+
+
+
+## Results of 500 simulated Prices Projections
+```{r, echo = FALSE}
+# Simulating Tesla Price Action Using Random Walk Theory
+# Mu and sigma of the Stock or Asset
+mu <- mean(BTC$Returns, na.rm = TRUE)
+sig <- sd(BTC$Returns, na.rm = TRUE)
+t <- nrow(BTC)
+Starting_price <- BTC$Adj.Close[1]
+a <- 1000
+
+price <- matrix(NA, nrow = nrow(BTC), a)
+price[1,] <- Starting_price
+for(j in 1:a){
+  for(i in 2:t){
+    price[i,j] <- price[i-1,j] + price[i-1,j]*(rnorm(1,mu,sig)/100)
+  }
+}
+summary(price[nrow(BTC),])
+quantile(price[nrow(BTC),], prob = seq( .05, 1, by = .05))
+```
+
+
+
+```{r, echo = FALSE}
 
 ```
