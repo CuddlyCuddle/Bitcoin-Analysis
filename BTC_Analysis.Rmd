@@ -164,7 +164,7 @@ fig
   
   There two figure presented above is a representation of the returns plotted against time which denotes the returns for each of the change in price valuation on the daily basis. In addition, the histogram represents the frequency for the returns within a .5% interval, and based on the graph there are some outlier in the distribution but it is mostly centered around the mean and it has a gaussian shape meaning that the returns are normally distributed. This can be tested using a form of normality test but will not given the visual shape of the data.
   
-# Financial projections of Bitcoin: {.tabset}
+# Financial projections of Bitcoin:
 
 ## BTC With Historical Statistics Used for the Deterministic Projection of Logarithmic Growth
 ```{r, echo = FALSE}
@@ -251,9 +251,10 @@ fig
 
   This data was simulated using the mathematical equation: 
   $$\delta S_t=S_{(t-1)}\cdot(\mu\delta t + \sigma \delta W_t)$$
-  Where in this case $\delta t = 1$ because the daily variance and the daily mean are being used rather than their annualized counter-parts. 
+  Where in this case $\delta t = 1$ because the daily variance and the daily mean are being used rather than their annualized counter-parts.
 
-## Subsetting the data Into 6 groups: {.tabset}
+## Subsetting the data Into 8 groups: {.tabset}
+
 ### Major Bull Market
 ```{r, echo = FALSE}
 BullMarket <- BTC[120:1187,]
@@ -280,24 +281,35 @@ kable(summary_table(FirstMinorBullMarket, summary_statistics))
 ```
 
 
-
-
 ### Minor Bear Market 2
 ```{r, echo = FALSE}
-SecondMinorBearMarket <- BTC[c(1744:2004),]
+SecondMinorBearMarket <- BTC[c(1744:1918),]
 kable(summary_table(SecondMinorBearMarket, summary_statistics))
 ```
 
 ### Minor Bull Market 2
 ```{r, echo = FALSE}
-SeconMinorBullMarket <- BTC[-c(2004:nrow(BTC)),]
+SecondMinorBearMarket <- BTC[c(1918:1977),]
+kable(summary_table(SecondMinorBearMarket, summary_statistics))
+```
+
+### Minor Bear Market 3
+```{r, echo = FALSE}
+SecondMinorBearMarket <- BTC[c(1918:1977),]
+kable(summary_table(SecondMinorBearMarket, summary_statistics))
+```
+
+### Minor Bull Market 3
+```{r, echo = FALSE}
+SeconMinorBullMarket <- BTC[-c(1977:2004),]
 kable(summary_table(SeconMinorBullMarket, summary_statistics))
 ```
 
+  
+For the tables presented above, the shorter term trend changes which occur within the Major Bear market are labeled as "minor." These minor changes are time frames where a local high was either surpased denoting a bullish change in price valuation or a local low was broken denoting a bearish change in price valuation. The returns of Bitcoin can be compared for each trending period using these tables; in addition, these tables exemplifies the importance of timing an investment correctly and investing in the bottom is not necessary so long as an investment is initialized early in the bullish trend. 
 
-
-
-## Results of 500 simulated Prices Projections
+  
+# Results of 1000 simulated Prices Projections
 ```{r, echo = FALSE}
 # Simulating Tesla Price Action Using Random Walk Theory
 # Mu and sigma of the Stock or Asset
@@ -314,12 +326,20 @@ for(j in 1:a){
     price[i,j] <- price[i-1,j] + price[i-1,j]*(rnorm(1,mu,sig)/100)
   }
 }
-summary(price[nrow(BTC),])
-quantile(price[nrow(BTC),], prob = seq( .05, 1, by = .05))
+
+sim1000 <- price[nrow(BTC),]
+summary(sim1000)
+price_probs <- quantile(sim1000, prob = seq( .05, .9, by = .05))
+kable(price_probs, col.names = "Price")
+
+fig <- plot_ly(x = ~sim1000, type = 'histogram')
+fig
 ```
 
 
+  
+Based on the simulation of 1000 prices using random walk theory, a summary of the statistics can be created in which a cummulative probability of the randomized projections of the price is obtained. This simply means that 95% of the data is $\le$ to the number given in the simulation.  
+The distribution of the simulated data can be seen in the histogram given as a exponential distribution. The reason for this is because there is a lower limit occuring in the data.
 
-```{r, echo = FALSE}
 
-```
+
